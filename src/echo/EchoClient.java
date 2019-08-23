@@ -1,8 +1,10 @@
 package echo;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Scanner;
@@ -14,49 +16,55 @@ public class EchoClient {
 	public static void main(String[] args) {
 		Socket socket = null;
 		Scanner scanner = new Scanner(System.in);
-		String chat = null;
+		
 		try {
-			//1. 소켓생성
+			//1.스캐너 생성 (표준입력, 키보드연결)
+			scanner = new Scanner(System.in);
+
+			//2. 소켓생성
 			socket = new Socket();
 
-			//2. 서버연결
+			//3. 서버연결
 			InetSocketAddress inetSocketAddress = new InetSocketAddress(SERVER_IP, SERVER_PORT);
 
 			socket.connect(inetSocketAddress);
 
-			System.out.println("[TCPClient] connected");
+			log("connected");
 
-			//3. IOStream 받아오기
-			InputStream is = socket.getInputStream();
-			OutputStream os = socket.getOutputStream();
+			//4. IOStream 받아오기
+			BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+			PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(),"UTF-8"), true);
+
 
 			/*
-			 * //4.쓰기
+			 * //5.쓰기
 			 *  String data = "안녕하세요\n"; 
 			 * os.write(data.getBytes("UTF-8"));
 			 */
 			while(true) {
-				chat = scanner.nextLine();
-				
-				if(chat.equals("exit")) {
+				//5.키보드 입력받기
+				System.out.println(">>");
+				String line = scanner.nextLine();
+
+
+				if(line.equals("exit")) {
 					break;
 				}
-				
-				os.write(chat.getBytes("UTF-8"));
 
-				//5.읽기
+				pw.println(line);
 
-				byte[] buffer = new byte[256];
-				int readByteCount = is.read(buffer); //blocking
-				if(readByteCount == -1) {
+				//6.읽기
+
+				String data = br.readLine();
+				if(data == null) {
 					//정상종료 : remote socket이 close()
 					//		메소드를 통해서 정상적으로 소켓을 닫은 경우
-					System.out.println("[TCPClient] closed by client");
+					log("closed by client");
 					return;
 				}
 
-				chat = new String(buffer,0,readByteCount,"UTF-8");
-				System.out.println("[TCPClient] received : " + chat);
+				
+				log(" received : " + data);
 
 			}
 		} catch (IOException e) {
@@ -64,7 +72,7 @@ public class EchoClient {
 			e.printStackTrace();
 		}finally {
 			try {
-				if(socket != null && socket.isClosed() == false) 
+				if(scanner != null && socket.isClosed() == false) 
 					socket.close();
 
 			}catch (IOException e) {
@@ -74,6 +82,10 @@ public class EchoClient {
 
 		}
 
+
+	}
+	public static void log(String log) {
+		System.out.println("[Echo Server]" + log);
 	}
 }
 
