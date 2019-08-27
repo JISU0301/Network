@@ -11,19 +11,21 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChatServer {
 	private static final int PORT = 9999;
 	
 	public static void main(String[] args) {
-		
+		List<PrintWriter> listPrintWriter = new ArrayList<PrintWriter>();
 		ServerSocket serverSocket = null;
-		String hostAddress;
-		
+				
 		try {
-			//서버소켓 설정.
-			hostAddress = InetAddress.getLocalHost().getHostAddress();
+			
 			serverSocket = new ServerSocket();
+			//서버소켓 설정.
+			String hostAddress = InetAddress.getLocalHost().getHostAddress();
 			serverSocket.bind(new InetSocketAddress(hostAddress, PORT));
 			log("연결 기다림 " + hostAddress + ":" + PORT);
 			
@@ -31,22 +33,37 @@ public class ChatServer {
 				//클라이언트와 연결기다림
 				Socket socket = serverSocket.accept();
 				log("연결됨" + socket.getRemoteSocketAddress());
-				new ChatServerThread(socket).start();
+				Thread thread = new ChatServerThread(socket, listPrintWriter); //확인...
+				thread.start();
+				
 			}
 						
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log("error : " + e);
+		}finally {
+			try {
+				if(serverSocket != null && serverSocket.isClosed() == false) {
+					serverSocket.close();
+				}
+			}catch(IOException e) {
+				log("error : " + e);
+			}finally {
+				try {
+					if( serverSocket != null && 
+						serverSocket.isClosed() == false ){
+						serverSocket.close();
+					}
+				}catch( IOException ex ) {
+					log( "error:" + ex );
+				}
+			}
 		}
 		
 	}
 
 
 	public static void log(String log) {
-		System.out.println("[Server]" + log);
+		System.out.println("[Chat Server]" + log);
 		
 	}
 
