@@ -10,80 +10,73 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Scanner;
 
+
 public class ChatClient {
-	private static final String SERVER_IP = "192.168.1.7";
+	private static final String SERVER_IP = "192.168.56.1";
 	private static final int SERVER_PORT = 9999;
 
 	public static void main(String[] args) {
 		Socket socket = null;
 		Scanner scanner = null;
-		
-		try {
-			// 1.create scanner to keyboard
-			scanner = new Scanner( System.in );
-			
-			// 2.create socket
-			socket = new Socket();
 
-			// 3.connect to server
+		try {
+	
+			scanner = new Scanner(System.in);
+		
+			socket = new Socket();
+			
 			socket.connect(new InetSocketAddress(SERVER_IP, SERVER_PORT));
+			log("connected");
 			
-			// 4.create stream
-			PrintWriter pw = new PrintWriter( new OutputStreamWriter(socket.getOutputStream(), "UTF-8" ), true );
-			BufferedReader br = new BufferedReader( new InputStreamReader(socket.getInputStream(), "UTF-8" ) );
+			PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8" ), true );
+			BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
 			
-			// 5.join
-			System.out.print( "닉네임>>" );
+			System.out.println("닉네임>>");
 			String nickname = scanner.nextLine();
-			pw.println( "JOIN:" + nickname );
-			
+			pw.println("join:" + nickname);
+			pw.flush();
 			
 			String ack = br.readLine();
-			if( "JOIN:OK".equals( ack ) ) {
-				System.out.println( "입장하였습니다. 즐거운 채팅 되세요" );
+			if("join:OK".equals(ack)) {
+				System.out.println("입장하였습니다. 즐거운 채팅 되세요");
 			}
 			
-			//6.create and start thread
-			new ChatClientThread( socket ).start();
-			
-			//7.input message
+			new ChatClientThread(socket).start();
+		
 			while( true ) {
-				if( scanner.hasNextLine() == false ) {
+				if(scanner.hasNextLine() == false) {
 					continue;
 				}
 				
-				String message = scanner.nextLine(); //Blocking
-													//입력대기중
-				
-				if( "quit".equals( message ) ) {
-					pw.println( "QUIT" );
-					//System.exit(0);
+				String input = scanner.nextLine();
+
+				if ("quit".equals(input)) {
+					pw.println("quit:" + nickname);
 					break;
 				}
-				
-				if( "".equals( message ) == false ){
-					pw.println( "MESSAGE:" + message );
+				if ("".equals(input) == false) {
+					pw.println( "message:" + input );
 				}
 			}
-		} catch (ConnectException ex) {
-			consoleLog( "서버[" + SERVER_IP + ":" + SERVER_PORT + "]에 연결할 수 없습니다." );	
-		} catch (Exception ex) {
-			consoleLog( "다음 이유로 프로그램을 종료 합니다 :" + ex );	
-		} finally {
+		}catch(ConnectException e) {
+			log("서버[" + SERVER_IP + ":" + SERVER_PORT + "]에 연결할 수 없습니다.");
+		}catch(Exception e) {
+			log("error : " + e);
+		}finally { 
 			try {
 				if( scanner != null ) {
 					scanner.close();
-				}
-				if( socket != null && socket.isClosed() == false ){
+				}else if( socket != null && socket.isClosed() == false ){
 					socket.close();
 				}
-			}catch( IOException ex ) {
-				consoleLog( "다음 이유로 프로그램을 종료 합니다 :" + ex );	
+			}catch(IOException e) {
+				log("error : " + e);
 			}
 		}
 	}
-	
-	public static void consoleLog( String message ) {
-		System.out.println( "\n[chat client]" + message );
+
+	public static void log(String log) {
+		System.out.println("[Client Server]" + log);
+		
 	}
 }
